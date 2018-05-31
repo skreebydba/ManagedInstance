@@ -4,8 +4,10 @@ $rgname = "fbgmipresrg";
 $vnet = "fbgmipresvn";
 $subnet = "default";
 $vmsubnet = "fbgmipressn";
+$rtable = "fbgmipresrt";
 $server = "fbgmipressrv";
-$location = "eastus"
+$location = "eastus";
+$miname = "fbgmipresmi";
 
 Remove-AzureRmResourceGroup -Name $rgname -Force;
 
@@ -32,14 +34,25 @@ $virtualNetwork | Set-AzureRmVirtualNetwork;
 $Route = New-AzureRmRouteConfig -Name "fbgmipresroute" -AddressPrefix 0.0.0.0/0 -NextHopType Internet;
 New-AzureRmRouteTable -Name "fbgmipresrt" -ResourceGroupName $rgname -Location $location -Route $Route;
 
-$RouteTable = Get-AzureRmRouteTable -Name fbgmipresrt -ResourceGroupName $rgname;
+$RouteTable = Get-AzureRmRouteTable -Name $rtable -ResourceGroupName $rgname;
 
 Set-AzureRmVirtualNetworkSubnetConfig `
   -VirtualNetwork $virtualNetwork `
   -Name $subnet `
   -AddressPrefix 10.0.0.0/24 `
-  -RouteTable $routeTablePublic | `
+  -RouteTable $routeTable |
 Set-AzureRmVirtualNetwork;
+
+New-AzureRmSqlManagedInstance `
+-Name $miname `
+-ResourceGroupName $rgname `
+-Location $location `
+-AdministratorCredential (Get-Credential) `
+-SubnetId $subnetConfig.Id `
+-StorageSizeInGB 1024 `
+-VCore 16 `
+-Edition "GeneralPurpose" `
+-ComputeGeneration Gen4;
 
 New-AzureRmVm `
     -ResourceGroupName $rgname `
