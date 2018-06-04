@@ -7,7 +7,7 @@ $vmsubnet = "fbgmipressn";
 $rtable = "fbgmipresrt";
 $server = "fbgmipressrv";
 $location = "eastus";
-$miname = "fbgmipresmi";
+$miname = "fbgmipresmi2";
 
 Remove-AzureRmResourceGroup -Name $rgname -Force;
 
@@ -43,16 +43,25 @@ Set-AzureRmVirtualNetworkSubnetConfig `
   -RouteTable $routeTable |
 Set-AzureRmVirtualNetwork;
 
+$vnetlong = Get-AzureRmVirtualNetwork -Name $vnet -ResourceGroupName $rgname;
+
+$subnetConfig = Get-AzureRmVirtualNetworkSubnetConfig -VirtualNetwork $vnetlong;
+
+$subnetConfig[0].Id;
+
 New-AzureRmSqlManagedInstance `
 -Name $miname `
 -ResourceGroupName $rgname `
 -Location $location `
 -AdministratorCredential (Get-Credential) `
--SubnetId $subnetConfig.Id `
--StorageSizeInGB 1024 `
--VCore 16 `
+-SubnetId $subnetConfig[0].Id `
+-StorageSizeInGB 256 `
+-VCore 8 `
 -Edition "GeneralPurpose" `
--ComputeGeneration Gen4;
+-ComputeGeneration Gen4 `
+-LicenseType LicenseIncluded;
+
+New-AzureRmSqlManagedDatabase -Name testdb -ManagedInstanceName $miname -ResourceGroupName $rgname;
 
 New-AzureRmVm `
     -ResourceGroupName $rgname `
